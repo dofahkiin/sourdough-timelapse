@@ -75,6 +75,11 @@ TEST_FPS=5
 TEST_DELETE_FRAMES_AFTER_RENDER=0
 TEST_CAPTURE_TIMEOUT="1s"
 
+# ---- Upload settings ----
+UPLOAD_AFTER_RENDER=1
+SCP_DEST="r5:/mnt/raid1/tmp/"
+DELETE_MP4_AFTER_UPLOAD_SUCCESS=1
+
 # ---- Checks ----
 command -v rpicam-still >/dev/null 2>&1 || {
   echo "Error: rpicam-still not found. Install rpicam-apps first." >&2
@@ -105,6 +110,7 @@ extract_lens_position() {
 }
 
 today=$(date +%F)
+run_stamp=$(date +%F_%H-%M-%S)
 
 if (( TEST_MODE == 1 )); then
   RES_W="$TEST_RES_W"
@@ -115,10 +121,9 @@ if (( TEST_MODE == 1 )); then
   DELETE_FRAMES_AFTER_RENDER="$TEST_DELETE_FRAMES_AFTER_RENDER"
   CAPTURE_TIMEOUT="$TEST_CAPTURE_TIMEOUT"
 
-  run_stamp=$(date +%F_%H-%M-%S)
   OUT_BASE="$BASE_DIR/test_$run_stamp"
   FRAMES_DIR="$OUT_BASE/frames"
-  OUT_MP4="$OUT_BASE/timelapse_test_${FRAMES}frames_${interval}s_${FPS}fps.mp4"
+  OUT_MP4="$OUT_BASE/timelapse_test_${run_stamp}_${FRAMES}frames_${interval}s_${FPS}fps.mp4"
 
   mkdir -p "$FRAMES_DIR"
 
@@ -165,7 +170,7 @@ else
 
   OUT_BASE="$BASE_DIR/$today"
   FRAMES_DIR="$OUT_BASE/frames"
-  OUT_MP4="$OUT_BASE/timelapse_${START_TIME:0:2}${START_TIME:3:2}-${END_TIME:0:2}${END_TIME:3:2}_${OUT_SECONDS}s_${FPS}fps.mp4"
+  OUT_MP4="$OUT_BASE/timelapse_${run_stamp}_${START_TIME:0:2}${START_TIME:3:2}-${END_TIME:0:2}${END_TIME:3:2}_${OUT_SECONDS}s_${FPS}fps.mp4"
 
   mkdir -p "$FRAMES_DIR"
 
@@ -293,13 +298,41 @@ ffmpeg -hide_banner -loglevel error \
 
 echo "Render complete: $OUT_MP4"
 
-if (( DELETE_FRAMES_AFTER_RENDER == 1 )); then
-  if [[ -n "${FRAMES_DIR:-}" && "$FRAMES_DIR" == "$OUT_BASE/frames" ]] || [[ -n "${FRAMES_DIR:-}" && "$FRAMES_DIR" == "$BASE_DIR/"test_*"/frames" ]]; then
-    echo "Deleting frames directory: $FRAMES_DIR"
-    rm -rf -- "$FRAMES_DIR"
+upload_success=0
+if (( UPLOAD_AFTER_RENDER == 1 )); then
+  if command -v scp >/dev/null 2>&1; then
+    echo "Uploading to $SCP_DEST ..."
+    if scp "$OUT_MP4" "$SCP_DEST"; then
+      echo "Upload complete: $SCP_DEST"
+      upload_success=1
+    else
+      echo "Warning: upload failed, local file kept at $OUT_MP4" >&2
+    fi
   else
-    echo "Refusing to delete frames: unexpected FRAMES_DIR='$FRAMES_DIR'" >&2
-    exit 1
+    echo "Warning: scp not found, skipping upload." >&2
+  fi
+fi
+
+if (( DELETE_FRAMES_AFTER_RENDER == 1 )); then
+  if (( upload_success == 1 )); then
+    if [[ -n "${FRAMES_DIR:-}" && "$FRAMES_DIR" == "$OUT_BASE/frames" ]] || [[ -n "${FRAMES_DIR:-}" && "$FRAMES_DIR" == "$BASE_DIR/"test_*"/frames" ]]; then
+      echo "Deleting frames directory after successful upload: $FRAMES_DIR"
+      rm -rf -- "$FRAMES_DIR"
+    else
+      echo "Refusing to delete frames: unexpected FRAMES_DIR='$FRAMES_DIR'" >&2
+      exit 1
+    fi
+  else
+    echo "Keeping frames because upload was not successful."
+  fi
+fi
+
+if (( DELETE_MP4_AFTER_UPLOAD_SUCCESS == 1 )); then
+  if (( upload_success == 1 )); then
+    echo "Deleting MP4 after successful upload: $OUT_MP4"
+    rm -f -- "$OUT_MP4"
+  else
+    echo "Keeping MP4 because upload was not successful."
   fi
 fi
 
