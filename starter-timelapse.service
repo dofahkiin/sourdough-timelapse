@@ -1,0 +1,13 @@
+[Unit]
+Description=Sourdough timelapse capture (08:00-16:00 -> 60s)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=milos
+Group=milos
+WorkingDirectory=/home/milos/scripts/sourdough
+ExecStart=/home/milos/scripts/sourdough/starter-timelapse.sh
+TimeoutStartSec=infinity
+Restart=no
