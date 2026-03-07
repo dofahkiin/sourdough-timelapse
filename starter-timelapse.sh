@@ -14,6 +14,8 @@ set -euo pipefail
 
 # ---- Mode ----
 TEST_MODE="${TEST_MODE:-0}"
+MANUAL_HOURS="${1:-}"
+MANUAL_CAPTURE_SEC=""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -112,6 +114,14 @@ extract_lens_position() {
 today=$(date +%F)
 run_stamp=$(date +%F_%H-%M-%S)
 
+if [[ -n "$MANUAL_HOURS" ]]; then
+  if ! awk -v h="$MANUAL_HOURS" 'BEGIN{exit !(h ~ /^[0-9]+([.][0-9]+)?$/ && h > 0)}'; then
+    echo "Invalid hours argument '$MANUAL_HOURS'. Example: ./starter-timelapse.sh 2" >&2
+    exit 1
+  fi
+  MANUAL_CAPTURE_SEC=$(awk -v h="$MANUAL_HOURS" 'BEGIN{printf "%.0f", h * 3600}')
+fi
+
 if (( TEST_MODE == 1 )); then
   RES_W="$TEST_RES_W"
   RES_H="$TEST_RES_H"
@@ -128,6 +138,32 @@ if (( TEST_MODE == 1 )); then
   mkdir -p "$FRAMES_DIR"
 
   echo "TEST_MODE=1"
+  echo "Capturing $FRAMES frames, every ${interval}s"
+  echo "Resolution: ${RES_W}x${RES_H}"
+  echo "Frames: $FRAMES_DIR"
+  echo "Video:  $OUT_MP4"
+elif [[ -n "$MANUAL_CAPTURE_SEC" ]]; then
+  # ---- Manual duration mode ----
+  # Starts immediately and runs for the supplied number of hours.
+  FRAMES=$((FPS * OUT_SECONDS))
+  now_epoch=$(date +%s)
+  start_epoch="$now_epoch"
+  end_epoch=$((start_epoch + MANUAL_CAPTURE_SEC))
+
+  interval=$((MANUAL_CAPTURE_SEC / FRAMES))
+  if (( interval < 1 )); then
+    interval=1
+  fi
+
+  OUT_BASE="$BASE_DIR/$today"
+  FRAMES_DIR="$OUT_BASE/frames"
+  hours_tag="${MANUAL_HOURS//./p}"
+  OUT_MP4="$OUT_BASE/timelapse_${run_stamp}_manual_${hours_tag}h_${OUT_SECONDS}s_${FPS}fps.mp4"
+
+  mkdir -p "$FRAMES_DIR"
+
+  echo "MANUAL MODE"
+  echo "Duration: ${MANUAL_HOURS}h ($(date -d "@$start_epoch") -> $(date -d "@$end_epoch"))"
   echo "Capturing $FRAMES frames, every ${interval}s"
   echo "Resolution: ${RES_W}x${RES_H}"
   echo "Frames: $FRAMES_DIR"
