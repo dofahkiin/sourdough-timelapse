@@ -1,0 +1,16 @@
+[Unit]
+Description=Raspberry Pi camera MJPEG HTTP stream
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=milos
+Group=milos
+WorkingDirectory=/home/milos/scripts/sourdough
+ExecStart=/usr/bin/python3 /home/milos/scripts/sourdough/mjpeg_server.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
