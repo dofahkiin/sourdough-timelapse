@@ -47,7 +47,7 @@ class StreamingOutput(io.BufferedIOBase):
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        if self.path == "/index.html":
             content = PAGE.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -56,7 +56,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.wfile.write(content)
             return
 
-        if self.path == "/stream.mjpg":
+        if self.path in ("/", "/stream.mjpg"):
             self.send_response(200)
             self.send_header("Age", "0")
             self.send_header("Cache-Control", "no-cache, private")
@@ -66,7 +66,8 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             try:
                 while True:
                     with output.condition:
-                        output.condition.wait()
+                        if output.frame is None:
+                            output.condition.wait()
                         frame = output.frame
                     self.wfile.write(b"--FRAME\r\n")
                     self.send_header("Content-Type", "image/jpeg")
