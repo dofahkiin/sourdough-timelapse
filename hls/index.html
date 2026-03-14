@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Starter Camera</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1117;
+      --panel: #161b22;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #2f81f7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top, rgba(47, 129, 247, 0.18), transparent 35%),
+        var(--bg);
+      color: var(--text);
+      font: 16px/1.4 system-ui, sans-serif;
+    }
+
+    main {
+      width: min(100vw, 980px);
+      padding: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    video {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #000;
+    }
+
+    .meta {
+      padding: 12px 14px 14px;
+    }
+
+    .meta p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    a {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <video controls autoplay muted playsinline src="/live.m3u8"></video>
+      <div class="meta">
+        <p>HLS stream for Safari/iPhone. Direct playlist: <a href="/live.m3u8">/live.m3u8</a></p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

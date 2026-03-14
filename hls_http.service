@@ -1,0 +1,16 @@
+[Unit]
+Description=Static HTTP server for Raspberry Pi camera HLS output
+After=network-online.target hls_stream.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=milos
+Group=milos
+WorkingDirectory=/home/milos/scripts/sourdough/hls
+ExecStart=/usr/bin/python3 -m http.server 8080 --bind 0.0.0.0 --directory /home/milos/scripts/sourdough/hls
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

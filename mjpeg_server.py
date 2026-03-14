@@ -12,6 +12,7 @@ from picamera2.outputs import FileOutput
 
 # Stream settings
 STREAM_SIZE = (1280, 720)
+STREAM_FPS = 30
 STREAM_PORT = 8080
 
 # Focus settings
@@ -94,8 +95,13 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 picam2 = Picamera2()
-config = picam2.create_video_configuration(main={"size": STREAM_SIZE})
+frame_duration_us = int(1_000_000 / STREAM_FPS)
+config = picam2.create_video_configuration(
+    main={"size": STREAM_SIZE},
+    controls={"FrameDurationLimits": (frame_duration_us, frame_duration_us)},
+)
 picam2.configure(config)
+logging.info("Configured stream: %sx%s @ %s fps", STREAM_SIZE[0], STREAM_SIZE[1], STREAM_FPS)
 
 if MANUAL_LENS_POSITION is None:
     picam2.set_controls({"AfMode": controls.AfModeEnum.Continuous})

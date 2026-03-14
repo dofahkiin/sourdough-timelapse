@@ -1,5 +1,7 @@
 *.jpg
 *.mp4
+hls/live.m3u8
+hls/live*.ts
 timelapse/
 focus-shots-2026-03-07_12-08-52/
 .DS_Store

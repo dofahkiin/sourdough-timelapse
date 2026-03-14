@@ -1,0 +1,16 @@
+[Unit]
+Description=Raspberry Pi camera HLS producer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=milos
+Group=milos
+WorkingDirectory=/home/milos/scripts/sourdough
+ExecStart=/usr/bin/env bash /home/milos/scripts/sourdough/hls_stream.sh
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
