@@ -10,6 +10,7 @@ FPS="${FPS:-30}"
 BITRATE="${BITRATE:-2500000}"
 SEGMENT_TIME="${SEGMENT_TIME:-1}"
 LIST_SIZE="${LIST_SIZE:-4}"
+LENS_POSITION="${LENS_POSITION:-6.0}"
 
 mkdir -p "$OUT_DIR"
 
@@ -32,11 +33,14 @@ echo "Starting HLS stream in $OUT_DIR"
 echo "Resolution: ${WIDTH}x${HEIGHT}"
 echo "Framerate: ${FPS} fps"
 echo "Bitrate: ${BITRATE} bps"
+echo "Lens position: ${LENS_POSITION}"
 
 rpicam-vid \
   --timeout 0 \
   --nopreview \
   --inline \
+  --autofocus-mode manual \
+  --lens-position "$LENS_POSITION" \
   --width "$WIDTH" \
   --height "$HEIGHT" \
   --framerate "$FPS" \
